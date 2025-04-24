@@ -1,12 +1,14 @@
-// components/AuthForm.tsx
+// src/app/components/AuthForm.tsx
+"use client"; // <-- Add this line
+
 import React, { useState, FormEvent } from 'react';
-import { auth } from '../lib/firebase';
+import { auth } from '../lib/firebase'; // <-- Adjust path if lib is outside app
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   AuthError,
 } from 'firebase/auth';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation'; // <-- Change this import
 
 export default function AuthForm() {
   const [isLogin, setIsLogin] = useState(true);
@@ -24,37 +26,32 @@ export default function AuthForm() {
     try {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
-        // Redirect to chat page or dashboard after successful login
-        router.push('/chat'); // Adjust the route as needed
+        router.push('/chat'); // Redirect to chat page
       } else {
         await createUserWithEmailAndPassword(auth, email, password);
-        // Optionally log them in automatically after signup
-        // Redirect to chat page or dashboard after successful signup
-         router.push('/chat'); // Adjust the route as needed
+        // Firebase automatically signs in the user after creation
+        router.push('/chat'); // Redirect to chat page
       }
     } catch (err) {
       const authError = err as AuthError;
-      // Provide more user-friendly error messages
       switch (authError.code) {
         case 'auth/user-not-found':
-          setError('No account found with this email.');
-          break;
         case 'auth/wrong-password':
-          setError('Incorrect password.');
+          setError('Invalid email or password.'); // Combine for security
           break;
         case 'auth/email-already-in-use':
           setError('This email is already registered. Try logging in.');
           break;
-         case 'auth/weak-password':
-           setError('Password should be at least 6 characters.');
-           break;
+        case 'auth/weak-password':
+          setError('Password should be at least 6 characters.');
+          break;
         case 'auth/invalid-email':
-           setError('Please enter a valid email address.');
-           break;
+          setError('Please enter a valid email address.');
+          break;
         default:
-          setError(authError.message || 'An unexpected error occurred.');
+          setError('Authentication failed. Please try again.'); // Generic fallback
+          console.error("Authentication error:", authError.code, authError.message);
       }
-      console.error("Authentication error:", authError);
     } finally {
       setLoading(false);
     }
@@ -63,19 +60,20 @@ export default function AuthForm() {
   const toggleMode = () => {
     setIsLogin(!isLogin);
     setError(null);
-    setEmail('');
-    setPassword('');
+    // Keep email/password fields if desired, or clear them:
+    // setEmail('');
+    // setPassword('');
   };
 
   return (
     <div className="w-full max-w-md space-y-8">
       <div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
           {isLogin ? 'Sign in to your account' : 'Create a new account'}
         </h2>
       </div>
       <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-        <input type="hidden" name="remember" defaultValue="true" />
+        {/* Removed hidden input, not needed */}
         <div className="rounded-md shadow-sm -space-y-px">
           <div>
             <label htmlFor="email-address" className="sr-only">
@@ -104,7 +102,7 @@ export default function AuthForm() {
               type="password"
               autoComplete={isLogin ? "current-password" : "new-password"}
               required
-              minLength={6} // Basic validation
+              minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
@@ -115,7 +113,7 @@ export default function AuthForm() {
         </div>
 
         {error && (
-          <p className="mt-2 text-center text-sm text-red-600">
+          <p className="mt-2 text-center text-sm text-red-600" role="alert">
             {error}
           </p>
         )}
@@ -132,6 +130,7 @@ export default function AuthForm() {
                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                </svg>
             ) : (isLogin ? 'Sign in' : 'Sign up')}
+             {loading ? 'Processing...' : (isLogin ? 'Sign in' : 'Sign up')}
           </button>
         </div>
 
