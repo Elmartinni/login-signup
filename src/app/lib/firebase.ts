@@ -1,7 +1,8 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-// import { getFirestore } from "firebase/firestore"; // Add if you need Firestore
-// import { getAnalytics } from "firebase/analytics"; // Add if you need Analytics
+// Example structure for src/app/lib/firebase.ts
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+// import { getFirestore } from 'firebase/firestore'; // If using Firestore
+// import { getDatabase } from 'firebase/database'; // If using Realtime DB
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -16,7 +17,7 @@ const firebaseConfig = {
 // Initialize Firebase only if it hasn't been initialized yet
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
-// const db = getFirestore(app); // Uncomment if using Firestore
-// const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null; // Uncomment if using Analytics
+// const db = getFirestore(app); // If using Firestore
+// const rtdb = getDatabase(app); // If using Realtime DB
 
-export { app, auth }; // Export db, analytics if needed
+export { auth /*, db, rtdb */ };

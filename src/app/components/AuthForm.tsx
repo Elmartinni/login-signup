@@ -1,14 +1,14 @@
 // src/app/components/AuthForm.tsx
-"use client"; // <-- Add this line
+"use client";
 
 import React, { useState, FormEvent } from 'react';
-import { auth } from '../lib/firebase'; // <-- Adjust path if lib is outside app
+import { auth } from '@/app/lib/firebase';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   AuthError,
 } from 'firebase/auth';
-import { useRouter } from 'next/navigation'; // <-- Change this import
+import { useRouter } from 'next/navigation';
 
 export default function AuthForm() {
   const [isLogin, setIsLogin] = useState(true);
@@ -22,22 +22,32 @@ export default function AuthForm() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    console.log(`Attempting ${isLogin ? 'login' : 'signup'} for:`, email); // Add log
 
     try {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
-        router.push('/chat'); // Redirect to chat page
+        console.log('Login successful'); // Add log
+        router.push('/chat');
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
-        // Firebase automatically signs in the user after creation
-        router.push('/chat'); // Redirect to chat page
+        console.log('Attempting createUserWithEmailAndPassword...'); // Add log
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        console.log('Signup successful, user:', userCredential.user.uid); // Add log
+        router.push('/chat');
       }
     } catch (err) {
       const authError = err as AuthError;
+      // Log the detailed error in development for debugging
+      console.error("Firebase Auth Error:", authError);
+      console.error("Error Code:", authError.code);
+      console.error("Error Message:", authError.message);
+
+
+      // Existing user-friendly error mapping
       switch (authError.code) {
         case 'auth/user-not-found':
         case 'auth/wrong-password':
-          setError('Invalid email or password.'); // Combine for security
+          setError('Invalid email or password.');
           break;
         case 'auth/email-already-in-use':
           setError('This email is already registered. Try logging in.');
@@ -48,9 +58,10 @@ export default function AuthForm() {
         case 'auth/invalid-email':
           setError('Please enter a valid email address.');
           break;
+        // Add more specific cases if needed based on console output
         default:
-          setError('Authentication failed. Please try again.'); // Generic fallback
-          console.error("Authentication error:", authError.code, authError.message);
+          setError('Authentication failed. Please try again.');
+          console.error("Unhandled Auth Error Code:", authError.code); // Log unhandled codes
       }
     } finally {
       setLoading(false);
@@ -60,11 +71,11 @@ export default function AuthForm() {
   const toggleMode = () => {
     setIsLogin(!isLogin);
     setError(null);
-    // Keep email/password fields if desired, or clear them:
-    // setEmail('');
-    // setPassword('');
+    // setEmail(''); // Optional: Clear fields on mode toggle
+    // setPassword(''); // Optional: Clear fields on mode toggle
   };
 
+  // --- Rest of the component (JSX) remains the same ---
   return (
     <div className="w-full max-w-md space-y-8">
       <div>
@@ -73,7 +84,6 @@ export default function AuthForm() {
         </h2>
       </div>
       <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-        {/* Removed hidden input, not needed */}
         <div className="rounded-md shadow-sm -space-y-px">
           <div>
             <label htmlFor="email-address" className="sr-only">
@@ -102,11 +112,11 @@ export default function AuthForm() {
               type="password"
               autoComplete={isLogin ? "current-password" : "new-password"}
               required
-              minLength={6}
+              minLength={6} // Ensure this matches Firebase rules if set
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-              placeholder="Password"
+              placeholder="Password (at least 6 characters)" // Update placeholder
               disabled={loading}
             />
           </div>
@@ -129,7 +139,7 @@ export default function AuthForm() {
                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                </svg>
-            ) : (isLogin ? 'Sign in' : 'Sign up')}
+            ) : null} {/* Simplified loading indicator logic */}
              {loading ? 'Processing...' : (isLogin ? 'Sign in' : 'Sign up')}
           </button>
         </div>
